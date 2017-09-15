@@ -13,9 +13,6 @@ set( LIBRARY_NAME
 set( LIBRARY_HEADERS_DIR
      include/${LIBRARY_NAME}
 )
-# set( LIBRARY_HEADERS
-#      ${LIBRARY_HEADERS_DIR}/Client.h
-# )
 file( GLOB LIBRARY_HEADERS
       "${LIBRARY_HEADERS_DIR}/*.hpp"
 )
@@ -24,9 +21,6 @@ file( GLOB LIBRARY_HEADERS
 set( LIBRARY_SOURCE_DIR
      src
 )
-# set( LIBRARY_SOURCE
-#      ${LIBRARY_SOURCE_DIR}/A.cpp
-# )
 file( GLOB LIBRARY_SOURCE
       "${LIBRARY_SOURCE_DIR}/*.cpp"
 )
@@ -65,4 +59,5 @@ target_link_libraries( ${LIBRARY_NAME}
                        ${LIBRARY_EXT_LIBS}
                      )
 
+# Build tests
 add_subdirectory(test)

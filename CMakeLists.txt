@@ -1,7 +1,7 @@
 cmake_minimum_required( VERSION 3.0.0 )
 
 set( PROJECT_NAME
-     jamim
+     JAM-IM
 )
 
 # Dependencies / headers - 
@@ -12,19 +12,27 @@ set( PROJECT_HEADERS_DIR
 file( GLOB PROJECT_HEADERS
       "${PROJECT_HEADERS_DIR}/*.hpp"
 )
-# or declare them explicitly
-# set( PROJECT_HEADERS ${PROJECT_HEADERS_DIR}/List.hpp )
 
-# Source files
-# set( PROJECT_SOURCE_DIR
-#      src
-# )
-# # glob all source files in the src dir
-# file( GLOB PROJECT_SOURCE
-#       "${PROJECT_SOURCE_DIR}/*.cpp"
-# )
-# or declare them explicitly
-# set( SOURCE ${PROJECT_SOURCE_DIR}/List.cpp ${PROJECT_SOURCE_DIR}/main.cpp )
+# Build the client executable
+set( CLIENT_EXECUTABLE_NAME
+     Client
+)
+set( CLIENT_SOURCE_DIR
+     src
+)
+set( CLIENT_SOURCE
+     ${CLIENT_SOURCE_DIR}/client.cpp)
+
+# Build the server executable
+set( SERVER_EXECUTABLE_NAME
+     Server
+)
+set( SERVER_SOURCE_DIR
+     src
+)
+set( SERVER_SOURCE
+     ${SERVER_SOURCE_DIR}/server.cpp)
+
 
 # Build and link libraries
 set( LIBRARIES_DIR
@@ -34,7 +42,7 @@ set( LIBRARIES
      jamim
 )
 
-# Link external libraries
+# External libraries
 set( PROJECT_EXT_LIBS
      boost_system-mt
      boost_regex-mt
@@ -57,26 +65,25 @@ enable_testing()
 
 #--- Project --- #
 include_directories( ${PROJECT_HEADERS_DIR} )
-add_executable( Client src/client.cpp )
-set_target_properties( Client
+add_executable( ${CLIENT_EXECUTABLE_NAME} ${CLIENT_SOURCE} )
+set_target_properties( ${CLIENT_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
                      )
-target_link_libraries( Client ${LIBRARIES} ${PROJECT_EXT_LIBS} )
+target_link_libraries( ${CLIENT_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
 
-add_executable( Server src/server.cpp )
-set_target_properties( Server
+add_executable( ${SERVER_EXECUTABLE_NAME} ${SERVER_SOURCE} )
+set_target_properties( ${SERVER_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
 )
-target_link_libraries( Server ${LIBRARIES} ${PROJECT_EXT_LIBS} )
+target_link_libraries( ${SERVER_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
 
 foreach( LIBRARY ${LIBRARIES} )
     add_subdirectory( "${LIBRARIES_DIR}/${LIBRARY}" )
 endforeach( LIBRARY )
-
 
 
 # add_subdirectory( test )
