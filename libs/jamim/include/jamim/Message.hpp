@@ -4,6 +4,7 @@
 #include <iostream>
 #include <array>
 #include <vector>
+#include <string>
 #include <utility>
 #include <boost/asio.hpp>
 
@@ -17,13 +18,24 @@ inline uint16_t make_uint16( uint8_t msb, uint8_t lsb )
              | static_cast<uint16_t>( lsb ) );
 }
 
+static const std::string QUIT_MSG{ "User has left the room." };
+static const std::string CANCEL_CURRENT_MSG{ "File transfer cancelled by the user." };
+static const std::string CANCEL_ALL_MSG{ "Files transfer cancelled by the user." };
+
 /* ------------------------------------------------------------------------- */
 using boost::uint16_t;
 using boost::uint8_t;
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
-enum MessageType : uint8_t { ChatMsg = 10, CommandMsg = 20, FileMsg = 30 };
+enum MessageType : uint8_t { EmptyMsg         = 0
+                           , ChatMsg          = 10
+                           , CmdQuit          = 20
+                           , CmdStartFile     = 30
+                           , CmdCancelCurrent = 40
+                           , CmdCancelAll     = 41
+                           , Unknown          = 255
+                           };
 enum MessageSize : uint16_t { Empty = 0, Default = 4096 };
 /* ------------------------------------------------------------------------- */
 
@@ -118,6 +130,13 @@ public:
             msg_body_.resize( header.msg_length() + header.length() );
         }
 
+    explicit Message( MessageHeader&& header )
+        : msg_body_( header.begin(), header.end() )
+        , header_( std::move(header) )
+        {
+            msg_body_.resize( header.msg_length() + header.length() );
+        }
+
     Message( MessageType type = MessageType::ChatMsg
            , uint16_t len = MessageSize::Empty )
         : Message( MessageHeader(type, len) )
@@ -173,19 +192,29 @@ public:
                                                ));
             msg_body_.resize( header_.length() + header_.msg_length() );
         }
+
+    std::string data_to_string() const
+        { return std::string(msg_body_.cbegin(), msg_body_.cend() ); }
+    std::string body_to_string() const
+        { return std::string( msg_body(), msg_body() + body_length() ); }
     
 /* friends */
     friend std::ostream& operator<<( std::ostream& os, const Message& msg );
-    friend Message message_from_string( std::string&& rv );
-    
+    friend Message message_from_string( const std::string& str );
+    friend Message command_from_string( const std::string& str );
+
 protected:
-    Message( std::string&& rv );
+    Message( MessageType type, const std::string& str );
 private:
     std::vector<uint8_t>    msg_body_;
     MessageHeader           header_;
+
+    // static const std::unordered_map<MessageType,std::string> s_type_string_map_;
 };
 /* ------------------------------------------------------------------------- */
 
+Message message_from_string( const std::string& str );
+Message command_from_string( const std::string& str );
 
 
 #endif /* MESSAGE_HPP_ */

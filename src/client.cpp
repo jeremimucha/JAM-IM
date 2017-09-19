@@ -22,8 +22,11 @@ int main( int argc, char* argv[] )
 
         std::string line;
         while( std::getline( std::cin, line ) ){
-            Message msg;
+            Message msg = message_from_string( line );
             chat.write( msg );
+            if( MessageType::CmdQuit == msg.msg_type() ){
+                break;
+            }
         }
 
         chat.close();
