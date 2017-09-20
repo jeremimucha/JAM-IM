@@ -12,6 +12,7 @@
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/thread.hpp>
 #include "Message.hpp"
 
 
@@ -26,10 +27,9 @@ public:
 
     virtual ~ChatParticipant() { }
     virtual void deliver( const Message& msg ) = 0;
-    uint8_t id()
-        { return id_; }
-    std::string string_id()
-        { return std::to_string(id_); }
+    // virtual void file_recieve( const FileTransfer& file ) = 0;
+    uint8_t id() { return id_; }
+    std::string string_id() { return std::to_string(id_); }
 
 private:
     const uint8_t         id_;
@@ -58,6 +58,7 @@ private:
 };
 /* ------------------------------------------------------------------------- */
 
+
 /* ChatSession */
 class ChatSession
     : public ChatParticipant
@@ -70,10 +71,12 @@ public:
 
     ChatSession( boost::asio::io_service& io_service
                , boost::asio::ip::tcp::socket socket
+               , boost::asio::ip::tcp::socket file_socket
                , ChatRoom& room
                , uint8_t id )
         : ChatParticipant( id )
         , socket_( std::move(socket) )
+        , file_socket_( std::move(file_socket) )
         , io_strand_( io_service )
         , room_( room )
         { }
@@ -125,6 +128,7 @@ private:
     void close();
 private:
     boost::asio::ip::tcp::socket    socket_;
+    boost::asio::ip::tcp::socket    file_socket_;
     boost::asio::strand             io_strand_;
     ChatRoom&                       room_;
     Message                         read_msg_;
@@ -140,25 +144,43 @@ private:
 class Server
 {
 public:
-    Server( const boost::asio::ip::tcp::endpoint& endpoint )
+    Server( const boost::asio::ip::tcp::endpoint& endpoint 
+          , const boost::asio::ip::tcp::endpoint& file_endpoint )
         : acceptor_( io_service_, endpoint )
+        , file_acceptor_( io_service_, file_endpoint )
         , socket_( io_service_ )
+        , file_socket_( io_service_ )
         , room_( io_service_ )
         {
+            // run();
+            do_file_accept();
             do_accept();
         }
 
     void run()
-        { io_service_.run(); }
+        { 
+            thread_group.create_thread( [this](){ io_service_.run(); } );
+            // thread_group.create_thread( [this](){ io_file_service_.run(); } );
+        }
+
+    ~Server()
+        { thread_group.join_all(); }
 
 private:
     void do_accept();
     void handle_accept( const boost::system::error_code& ec );
 
+    void do_file_accept();
+    void handle_file_accept( const boost::system::error_code& ec );
+
 private:
     boost::asio::io_service             io_service_;
+    // boost::asio::io_service             io_file_service_;
     boost::asio::ip::tcp::acceptor      acceptor_;
+    boost::asio::ip::tcp::acceptor      file_acceptor_;
     boost::asio::ip::tcp::socket        socket_;
+    boost::asio::ip::tcp::socket        file_socket_;
+    boost::thread_group                 thread_group;
     ChatRoom                            room_;
 };
 /* ------------------------------------------------------------------------- */

@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <iterator>
 
 /* ------------------------------------------------------------------------- */
 namespace
@@ -68,11 +69,47 @@ Message command_from_string( const std::string& str )
     
 }
 
+Message make_file_message( uint32_t file_size, const Message& msg )
+{
+    // MessageHeader header( MessageType::FileMsg, msg.body_length() );
+    // std::vector<uint8_t> msgbody(header.begin(), header.end());
+    // for( int i=24; i>=0; i-=8 ){
+    //     msgbody.push_back( static_cast<uint8_t>(file_size >> i) );
+    // }
+    // std::copy( msg.msg_body(), msg.msg_body()+msg.body_length()
+    //          , std::back_inserter(msgbody) );
+            
+    // return Message( std::move(msgbody) );
+    return make_file_message( file_size, msg.body_to_string() );
+}
+
+Message make_file_message( uint32_t file_size, const std::string& str )
+{
+    MessageHeader header( MessageType::FileMsg, str.size() );
+    std::vector<uint8_t> msgbody(header.begin(), header.end());
+    for( int i=24; i>=0; i-=8 ){
+        msgbody.push_back( static_cast<uint8_t>(file_size >> i) );
+    }
+    std::copy( msg.msg_body(), msg.msg_body()+msg.body_length()
+             , std::back_inserter(msgbody) );
+            
+    return Message( std::move(msgbody) );
+}
+
 
 Message::Message( MessageType type, const std::string& str )
     : Message( type, str.size() )
 {
     std::copy( str.cbegin(), str.cend(), (msg_body_.data() + header_.length()) );
+}
+
+Message::Message( std::vector<uint8_t>&& body )
+    : msg_body_( std::move( body ) )
+    , header_( static_cast<MessageType>(msg_body_[MessageHeader::type_offset])
+             , make_uint16(msg_body_[MessageHeader::length_msb_offset]
+                          ,msg_body_[MessageHeader::length_lsb_offset]
+             ))
+{
 }
 
 

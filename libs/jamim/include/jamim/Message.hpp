@@ -18,11 +18,21 @@ inline uint16_t make_uint16( uint8_t msb, uint8_t lsb )
              | static_cast<uint16_t>( lsb ) );
 }
 
+inline uint32_t make_uint32( uint8_t b31_24, uint8_t b23_16
+                           , uint8_t b15_8, uint8_t b7_0 )
+{
+    return ( (static_cast<uint16_t>(b31_24) << 24 )
+           | (static_cast<uint16_t>(b23_16) << 16 )
+           | (static_cast<uint16_t>(b15_8)  <<  8 )
+           | (static_cast<uint16_t>(b7_0) ) );
+}
+
 static const std::string QUIT_MSG{ "User has left the room." };
 static const std::string CANCEL_CURRENT_MSG{ "File transfer cancelled by the user." };
 static const std::string CANCEL_ALL_MSG{ "Files transfer cancelled by the user." };
 
 /* ------------------------------------------------------------------------- */
+using boost::uint32_t;
 using boost::uint16_t;
 using boost::uint8_t;
 /* ------------------------------------------------------------------------- */
@@ -34,6 +44,9 @@ enum MessageType : uint8_t { EmptyMsg         = 0
                            , CmdStartFile     = 30
                            , CmdCancelCurrent = 40
                            , CmdCancelAll     = 41
+                           , FileMsg          = 60
+                           , FileAccept       = 61
+                           , FileRefuse       = 62
                            , Unknown          = 255
                            };
 enum MessageSize : uint16_t { Empty = 0, Default = 4096 };
@@ -122,6 +135,8 @@ private:
 class Message
 {
 public:
+    enum { filesize_offset_31=3, filesize_offset_23=4, filesize_offset_15=5,
+           filesize_offset_7=6, FileMsgHeaderSize=7};
 
     explicit Message( const MessageHeader& header )
         : msg_body_( header.begin(), header.end() )
@@ -144,7 +159,12 @@ public:
     
 
     uint16_t header_length() const
-        { return header_.length(); }
+        { 
+            if( msg_type() == FileMsg )
+                return FileMsgHeaderSize;
+            else
+                return header_.length();
+        }
 
     uint16_t body_length() const
         { return header_.msg_length(); }
@@ -154,6 +174,15 @@ public:
             header_.msg_length( len );
             msg_body_[MessageHeader::length_msb_offset] = header_.length_msb();
             msg_body_[MessageHeader::length_lsb_offset] = header_.length_lsb();
+        }
+
+    uint32_t file_size() const
+        {
+            // only valid for FileMsg
+            return make_uint32( msg_body_[filesize_offset_31]
+                              , msg_body_[filesize_offset_23]
+                              , msg_body_[filesize_offset_15]
+                              , msg_body_[filesize_offset_7] );
         }
 
     uint16_t total_length() const
@@ -169,10 +198,10 @@ public:
         }
 
     uint8_t* msg_body()
-        { return msg_body_.data() + header_.length(); }
+        { return msg_body_.data() + header_length(); }
 
     const uint8_t* msg_body() const
-        { return msg_body_.data() + header_.length(); }
+        { return msg_body_.data() + header_length(); }
 
     uint8_t* data()
         {
@@ -202,9 +231,10 @@ public:
     friend std::ostream& operator<<( std::ostream& os, const Message& msg );
     friend Message message_from_string( const std::string& str );
     friend Message command_from_string( const std::string& str );
-
+    friend Message make_file_message( uint32_t file_size, const Message& msg );
 protected:
     Message( MessageType type, const std::string& str );
+    explicit Message( std::vector<uint8_t>&& body );
 private:
     std::vector<uint8_t>    msg_body_;
     MessageHeader           header_;
@@ -215,6 +245,7 @@ private:
 
 Message message_from_string( const std::string& str );
 Message command_from_string( const std::string& str );
-
+Message make_file_message( uint32_t file_size, const Message& msg );
+Message make_file_message( uint32_t file_size, const std::string& str );
 
 #endif /* MESSAGE_HPP_ */

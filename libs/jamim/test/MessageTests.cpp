@@ -103,6 +103,7 @@ TEST_F( MessageTest, Constructors ){
 }
 
 
+
 TEST_F( MessageTest, MessageBody ){
     std::vector<boost::uint8_t> TestData( TestMsg.cbegin(), TestMsg.cend() );
     std::vector<boost::uint8_t> m1_data( m1_.msg_body(), m1_.msg_body() + m1_.body_length() );
@@ -258,5 +259,23 @@ TEST( message_from_string_Test, unknownCmdTest ){
     EXPECT_EQ( unknown_msg_type, message_from_string(un4_).msg_type() );
     EXPECT_EQ( unknown_msg_type, message_from_string(un5_).msg_type() );
 }
+
+
+TEST( make_file_message_Test, ConstructorTest ){
+    uint32_t test_size{12345};
+    const std::string cmd( "-send" );
+    const std::string input_msg_body( "/some/file/dir" );
+    Message input_msg = message_from_string( cmd + " " + input_msg_body );
+    
+    ASSERT_EQ( MessageType::CmdStartFile, input_msg.msg_type() );
+    ASSERT_EQ( input_msg_body, input_msg.body_to_string() );
+    ASSERT_EQ( input_msg_body.size(), input_msg.body_length() );
+
+    Message test_msg = make_file_message( test_size, input_msg );
+    EXPECT_EQ( MessageType::FileMsg, test_msg.msg_type() );
+    EXPECT_EQ( input_msg_body, test_msg.body_to_string() );
+    EXPECT_EQ( test_size, test_msg.file_size() );
+}
+
 
 } // namespace

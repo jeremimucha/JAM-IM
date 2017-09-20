@@ -1,6 +1,13 @@
 #include "Client.hpp"
 #include <boost/bind.hpp>
+#include <boost/thread.hpp>
+#include <boost/filesystem.hpp>
 
+#ifndef NDEBUG
+static boost::mutex debug_mutex;
+#endif /* NDEBUG */
+
+namespace fs = boost::filesystem;
 
 /* Client */
 /* ------------------------------------------------------------------------- */
@@ -29,6 +36,36 @@ void Client::write( const Message& msg )
                   });
 }
 
+void Client::start_file( const Message& msg )
+{
+    /* #1 check if the file exists
+     * #2 Open the file, get file size
+     * #3 Build new file message with file size + file name
+     */
+    fs::path filepath( msg.body_to_string() );
+    if( fs::is_regular_file( filepath ) ){
+        #ifndef NDEBUG
+        boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << "file " << filepath << " exists, size: "
+                  << file_size( filepath ) << std::endl;
+        #endif /* NDEBUG */
+
+        io_file_service_.post(
+            [this,filepath]()
+            {
+                bool write_in_progress = !file_queue_.empty();
+                file_queue_.push_back( filepath );
+                if( !write_in_progress ){
+                    do_start_send_file();
+                }
+            });
+    }
+    else{
+        boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << "[Error] File doesn't exist." << std::endl;
+    }
+}
+
 void Client::close()
 {
     io_strand_.post( [this](){ socket_.close(); } );
@@ -51,6 +88,135 @@ void Client::handle_connect( const boost::system::error_code& ec
         do_read_header();
     }
 }
+
+void Client::do_file_connect( boost::asio::ip::tcp::resolver::iterator endpoint_iterator )
+{
+    boost::asio::async_connect( file_socket_, endpoint_iterator
+        , boost::bind( &Client::handle_file_connect, this
+                     , boost::asio::placeholders::error
+                     , boost::asio::placeholders::iterator ) );
+}
+void Client::handle_file_connect( const boost::system::error_code& ec
+                                , boost::asio::ip::tcp::resolver::iterator /*it*/ )
+{   
+    #ifndef NDEBUG
+    {   boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __FUNCTION__ << ", ec: " << ec << std::endl;    
+    if( !ec ){
+        std::cout << "File transfer socket connected " << std::endl;
+    }
+    }
+    #endif /* NDEBUG */
+}
+
+void Client::do_start_send_file()
+{
+    write( make_file_message( file_size(file_queue_.front())
+                            , file_queue_.front().string() ) );
+    // wait for the file transfer to be accepted on the receiving end
+    boost::asio::async_read( file_socket_
+        , boost::asio::buffer( read_msg_.data(), read_msg_.header_length() )
+        , io_strand_.wrap(
+            boost::bind( &Client::handle_start_send_file, this
+                       , boost::asio::placeholders::error
+                       , boost::asio::placeholders::bytes_transferred )
+        ));
+}
+
+void Client::handle_start_send_file( const boost::system::error_code& ec
+                              , std::size_t /*length*/ )
+{
+    if( !ec ){
+        if( MessageType::FileAccept == read_msg_.msg_type() ){
+            do_send_file();
+        }
+        else{
+            boost::mutex::scoped_lock lk(debug_mutex);
+            std::cout << "File transfer refused " << file_queue_.front() << std::endl;
+            file_queue_.pop_front();
+            if( !file_queue_.empty() ){
+                do_start_send_file();
+            }
+        }
+    }
+    else{
+        #ifndef NDEBUG
+        {   boost::mutex::scoped_lock lk(debug_mutex);
+            std::cout << __FUNCTION__ << ", ec: " << ec << std::endl;
+        }
+        #endif /* NDEBUG */
+        handle_error( ec );
+    }
+}
+
+void Client::do_send_file( )
+{
+    write_file_.open( file_queue_.front().string(), std::ios_base::binary );
+    if( write_file_ ){
+        write_file_.read( file_buf_.array(), file_buf_.size() );
+        if( write_file_.gcount() <= 0 ){
+            handle_file_error();
+        }
+        boost::asio::async_write( file_socket_
+            , boost::asio::buffer( file_buf_.data(), write_file_.gcount() )
+            , boost::bind( &Client::handle_send_file, this
+                         , boost::asio::placeholders::error
+                         , boost::asio::placeholders::bytes_transferred ) );
+    }
+}
+
+void Client::handle_send_file( const boost::system::error_code& ec
+                              , std::size_t /*length*/
+{
+    if( !ec ){
+        if( write_file_ ){
+            write_file_.read( &(file_buf_.data()[0]), file_buf_.size() );
+            if( write_file_.gcount() <= 0 ){
+                handle_file_error();
+            }
+            boost::asio::async_write( file_socket_
+                , boost::asio::buffer( file_buf_.data(), file_buf_.size() )
+                , boost::bind( &Client::handle_send_file, this
+                             , boost::asio::placeholders::error
+                             , boost::asio::placeholders::bytes_transferred ) );
+        }
+        else if( write_file_.eof() ){
+            #ifndef NDEBUG
+            { boost::mutex::scoped_lock lk(debug_mutex);
+                std::cout << "File " << file_queue_.front() << " successfully transferred.";
+            }
+            #endif /* NDEBUG */
+            write_file_.close();
+            file_queue_.pop_front();
+            if( !file_queue_.empty() ){
+                do_start_send_file();
+            }
+        }
+        else{
+            #ifndef NDEBUG
+            { boost::mutex::scoped_lock lk(debug_mutex);
+                std::cout << "File " << file_queue_.front() << " error.";
+            }
+            handle_file_error();
+            file_queue_.pop_front();
+            if( !file_queue_.empty() ){
+                do_start_send_file();
+            }
+            #endif /* NDEBUG */
+        }
+    }
+}
+
+void Client::handle_file_error()
+{
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __FUNCTION__ << std::endl;
+    }
+    #endif /* NDEBUG */
+    write_file_.close();
+}
+
 
 void Client::do_read_header()
 {

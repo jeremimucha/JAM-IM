@@ -3,6 +3,7 @@
 #include <boost/bind.hpp>
 #include <functional>
 #include <boost/thread.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 
 using boost::mutex;
@@ -319,9 +320,33 @@ void Server::handle_accept( const boost::system::error_code& ec )
     #endif /* NDEBUG */
 
     if( !ec ){
+        // std::make_shared<ChatSession>( io_service_
+        //                              , std::move( socket_ )
+        //                              , room_, session_id++ )->start();
+
+        do_file_accept();
+    }
+}
+
+void Server::do_file_accept()
+{
+    file_acceptor_.async_accept( file_socket_
+        , boost::bind( &Server::handle_file_accept, this
+                     , boost::asio::placeholders::error ) );
+}
+void Server::handle_file_accept( const boost::system::error_code& ec )
+{
+    #ifndef NDEBUG
+    {   mutex::scoped_lock lk(debug_mutex);
+        std::cout << __FUNCTION__ << ", ec: " << ec << std::endl;
+    }
+    #endif /* NDEBUG */
+    if( !ec ){
+        
         std::make_shared<ChatSession>( io_service_
                                      , std::move( socket_ )
-                                     , room_, session_id++ )->start();
+                                     , std::move( file_socket_ )
+                                     , room_, 1 )->start();
 
         do_accept();
     }
