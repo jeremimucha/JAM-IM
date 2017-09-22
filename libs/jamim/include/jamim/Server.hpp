@@ -98,17 +98,20 @@ private:
                      , std::size_t /*length*/
                      /* , ptr_ChatParticipant sender */ );                     
     // void do_start_file();
-    void handle_start_file( const boost::system::error_code& ec
+    void handle_file_start( const boost::system::error_code& ec
                           , std::size_t /*length*/
                           /* , ptr_ChatParticipant sender */ );
     // void do_cancel_current();
-    void handle_cancel_current( const boost::system::error_code& ec
+    void handle_file_cancel( const boost::system::error_code& ec
                               , std::size_t /*length*/
                               /* , ptr_ChatParticipant sender */ );
     // void do_cancel_all();
-    void handle_cancel_all( const boost::system::error_code& ec
+    void handle_file_cancel_all( const boost::system::error_code& ec
                           , std::size_t /*length*/
                           /* , ptr_ChatParticipant sender */ );
+
+    void handle_file_done( const boost::system::error_code& ec
+                         , std::size_t /*length*/ );
     // void do_quit();
     void handle_quit( const boost::system::error_code& ec
                     , std::size_t /*length*/

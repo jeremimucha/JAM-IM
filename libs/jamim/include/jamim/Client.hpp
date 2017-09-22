@@ -30,6 +30,7 @@ public:
         : io_service_( io_service )
         , io_file_service_( io_file_service )
         , io_strand_( io_service )
+        , io_file_strand_( io_file_service_ )
         , socket_( io_service )
         , file_socket_( io_file_service_ )
         {
@@ -42,6 +43,7 @@ public:
     void close( );
 
 private:
+/* connecting */
     void do_connect( boost::asio::ip::tcp::resolver::iterator endpoint_iterator );
     void handle_connect( const boost::system::error_code& ec
                        , boost::asio::ip::tcp::resolver::iterator /* it */ );
@@ -50,53 +52,77 @@ private:
     void handle_file_connect( const boost::system::error_code& ec
                         , boost::asio::ip::tcp::resolver::iterator /* it */ );
 
+/* general communication */
     void do_read_header();
-    void handle_read_header(const boost::system::error_code& ec, std::size_t /*length*/);
+    void handle_read_header(const boost::system::error_code& ec
+                           , std::size_t /*length*/);
 
     void do_read_body();
-    void handle_read_body(const boost::system::error_code& ec, std::size_t /*length*/);
 
-    void handle_empty(const boost::system::error_code& ec, std::size_t /*length*/);
+    void handle_chat_message(const boost::system::error_code& ec
+                            , std::size_t /*length*/);
 
-    // void do_start_file();
-    void handle_start_file(const boost::system::error_code& ec, std::size_t /*lenght*/ );
-
-    // void do_cancel_current();
-    void handle_cancel_current(const boost::system::error_code& ec, std::size_t /*length*/);
-
-    // void do_cancel_all();
-    void handle_cancel_all(const boost::system::error_code& ec, std::size_t /*length*/);
+    void handle_empty(const boost::system::error_code& ec
+                     , std::size_t /*length*/);
     
+    void handle_quit(const boost::system::error_code& ec
+                    , std::size_t /*length*/);
+
+    void handle_unknown(const boost::system::error_code& /*ec*/
+                       , std::size_t /*length*/);
+
     void do_write();
-    void handle_write(const boost::system::error_code& ec, std::size_t /*length*/);
-
-    // void do_quit();
-    void handle_quit(const boost::system::error_code& ec, std::size_t /*length*/);
-
-    void handle_unknown(const boost::system::error_code& /*ec*/, std::size_t /*length*/);
+    void handle_write(const boost::system::error_code& ec
+                     , std::size_t /*length*/);
 
     void handle_error( const boost::system::error_code& ec );
 
-    void do_start_send_file();
-    void handle_start_send_file( const boost::system::error_code& ec
-                          , std::size_t /*length*/);
-    
-    void do_send_file();
-    void handle_send_file( const boost::system::error_code& ec
-                          , std::size_t /*length*/);
+/* file transfer */
+    void do_start_file();
 
-    void handle_file_error();
+    void do_file_send_start();
+    void handle_file_send_start( const boost::system::error_code& ec
+                               , std::size_t /*length*/);
+    
+    void do_file_send();
+    void handle_file_send( const boost::system::error_code& ec
+                         , std::size_t /*length*/);
+
+    void handle_file_read_start( const boost::system::error_code& ec
+                               , std::size_t /*length*/);
+                               
+    void do_file_read();
+    void handle_file_read( const boost::system::error_code& ec
+                         , std::size_t /*length*/);
+
+    void do_file_read_done();
+
+    void handle_file_done( const boost::system::error_code& ec
+                         , std::size_t /*length*/);
+
+    void handle_file_cancel( const boost::system::error_code& ec
+                           , std::size_t /*length*/);
+ 
+     void handle_file_cancel_all( const boost::system::error_code& ec
+                                , std::size_t /*length*/);
+
+    void handle_file_send_error();
+    void handle_file_read_error();
 private:
-    boost::asio::io_service&        io_service_;
-    boost::asio::io_service&        io_file_service_;
-    boost::asio::strand             io_strand_;
-    boost::asio::ip::tcp::socket    socket_;
-    boost::asio::ip::tcp::socket    file_socket_;
-    Message                         read_msg_;
-    std::ifstream                   write_file_;
-    std::ofstream                   read_file_;
-    std::array<uint8_t, 4096>       file_buf_;
-    std::deque< Message >           write_msg_queue_;
+    boost::asio::io_service&               io_service_;
+    boost::asio::io_service&               io_file_service_;
+    boost::asio::strand                    io_strand_;
+    boost::asio::strand                    io_file_strand_;
+    boost::asio::ip::tcp::socket           socket_;
+    boost::asio::ip::tcp::socket           file_socket_;
+    Message                                read_msg_;
+    Message                                file_msg_;
+    std::ifstream                          send_file_;
+    std::ofstream                          read_file_;
+    std::array<char, 4096>                 send_file_buf_;
+    std::array<char, 4096>                 read_file_buf_;
+    uint32_t                               read_file_size_;
+    std::deque< Message >                  write_msg_queue_;
     std::deque< boost::filesystem::path >  file_queue_;
 
     static const std::unordered_map<MessageType, Handler>  s_handler_map_;

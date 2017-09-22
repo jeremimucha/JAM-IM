@@ -90,7 +90,7 @@ Message make_file_message( uint32_t file_size, const std::string& str )
     for( int i=24; i>=0; i-=8 ){
         msgbody.push_back( static_cast<uint8_t>(file_size >> i) );
     }
-    std::copy( msg.msg_body(), msg.msg_body()+msg.body_length()
+    std::copy( str.cbegin(), str.cend()
              , std::back_inserter(msgbody) );
             
     return Message( std::move(msgbody) );

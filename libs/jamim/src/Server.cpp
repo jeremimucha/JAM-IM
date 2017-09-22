@@ -49,9 +49,10 @@ ChatSession::s_handler_map_{
       { MessageType::EmptyMsg         , &ChatSession::handle_empty }
     , { MessageType::ChatMsg          , &ChatSession::handle_read_body }
     , { MessageType::CmdQuit          , &ChatSession::handle_quit }
-    , { MessageType::CmdStartFile     , &ChatSession::handle_start_file }
-    , { MessageType::CmdCancelCurrent , &ChatSession::handle_cancel_current }
-    , { MessageType::CmdCancelAll     , &ChatSession::handle_cancel_all }
+    , { MessageType::FileMsg          , &ChatSession::handle_file_start }
+    , { MessageType::FileCancel       , &ChatSession::handle_file_cancel }
+    , { MessageType::FileCancelAll    , &ChatSession::handle_file_cancel_all }
+    , { MessageType::FileDone         , &ChatSession::handle_file_done}
     , { MessageType::Unknown          , &ChatSession::handle_unknown }
 };
 
@@ -163,7 +164,7 @@ void ChatSession::handle_empty( const boost::system::error_code& ec
     do_read_header();
 }
 
-void ChatSession::handle_start_file( const boost::system::error_code& ec
+void ChatSession::handle_file_start( const boost::system::error_code& ec
                                    , std::size_t /*length*/
                                    /* , ptr_ChatParticipant sender */ )
 {
@@ -176,7 +177,7 @@ void ChatSession::handle_start_file( const boost::system::error_code& ec
     do_read_header();
 }
 
-void ChatSession::handle_cancel_current( const boost::system::error_code& ec
+void ChatSession::handle_file_cancel( const boost::system::error_code& ec
                                        , std::size_t /*length*/
                                        /* , ptr_ChatParticipant sender */ )
 {
@@ -189,9 +190,21 @@ void ChatSession::handle_cancel_current( const boost::system::error_code& ec
     do_read_header();
 }
 
-void ChatSession::handle_cancel_all( const boost::system::error_code& ec
+void ChatSession::handle_file_cancel_all( const boost::system::error_code& ec
                                    , std::size_t /*length*/
                                    /* , ptr_ChatParticipant sender */ )
+{
+    #ifndef NDEBUG
+    {   mutex::scoped_lock lk(debug_mutex);
+        std::cout << __FUNCTION__ << ", ec: " << ec << std::endl;
+    }
+    #endif /* NDEBUG */
+
+    do_read_header();
+}
+
+void ChatSession::handle_file_done( const boost::system::error_code& ec
+                                  , std::size_t /*length*/ )
 {
     #ifndef NDEBUG
     {   mutex::scoped_lock lk(debug_mutex);

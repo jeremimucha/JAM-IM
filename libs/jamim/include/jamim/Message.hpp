@@ -35,6 +35,7 @@ static const std::string CANCEL_ALL_MSG{ "Files transfer cancelled by the user."
 using boost::uint32_t;
 using boost::uint16_t;
 using boost::uint8_t;
+using boost::int8_t;
 /* ------------------------------------------------------------------------- */
 
 /* ------------------------------------------------------------------------- */
@@ -47,6 +48,9 @@ enum MessageType : uint8_t { EmptyMsg         = 0
                            , FileMsg          = 60
                            , FileAccept       = 61
                            , FileRefuse       = 62
+                           , FileCancel       = 63
+                           , FileCancelAll    = 64
+                           , FileDone         = 65
                            , Unknown          = 255
                            };
 enum MessageSize : uint16_t { Empty = 0, Default = 4096 };
@@ -232,6 +236,8 @@ public:
     friend Message message_from_string( const std::string& str );
     friend Message command_from_string( const std::string& str );
     friend Message make_file_message( uint32_t file_size, const Message& msg );
+    friend Message make_file_message( uint32_t file_size
+                                    , const std::string& str );
 protected:
     Message( MessageType type, const std::string& str );
     explicit Message( std::vector<uint8_t>&& body );
