@@ -19,7 +19,7 @@ const std::unordered_map<MessageType, Client::Handler>  Client::s_handler_map_{
     , { MessageType::CmdQuit          , &Client::handle_quit }
     , { MessageType::FileCancel       , &Client::handle_file_cancel }
     , { MessageType::FileCancelAll    , &Client::handle_file_cancel_all }
-    , { MessageType::FileMsg          , &Client::handle_file_read_start }
+    , { MessageType::FileStart        , &Client::handle_file_read_start }
     , { MessageType::FileDone         , &Client::handle_file_done }
     , { MessageType::Unknown          , &Client::handle_unknown }
 };
@@ -371,10 +371,14 @@ void Client::handle_file_send_error()
 }
 
 void Client::handle_file_read_start( const boost::system::error_code& ec
-                                , std::size_t /*length*/ )
+                                   , std::size_t /*length*/ )
 {
+    #ifndef NDEBUG
+    {
+        std::cout << __FUNCTION__ << std::endl;
+    }
+    #endif /* NDEBUG */
     if( !ec ){
-        /* TODO : implement handle_file_read_start */
         read_file_size_ = read_msg_.file_size();
         std::cout << "Request to start file transfer: "
                   << read_msg_.body_to_string()

@@ -45,7 +45,7 @@ enum MessageType : uint8_t { EmptyMsg         = 0
                            , CmdStartFile     = 30
                            , CmdCancelCurrent = 40
                            , CmdCancelAll     = 41
-                           , FileMsg          = 60
+                           , FileStart        = 60
                            , FileAccept       = 61
                            , FileRefuse       = 62
                            , FileCancel       = 63
@@ -140,7 +140,7 @@ class Message
 {
 public:
     enum { filesize_offset_31=3, filesize_offset_23=4, filesize_offset_15=5,
-           filesize_offset_7=6, FileMsgHeaderSize=7};
+           filesize_offset_7=6, FileStartHeaderSize=7};
 
     explicit Message( const MessageHeader& header )
         : msg_body_( header.begin(), header.end() )
@@ -155,6 +155,8 @@ public:
         {
             msg_body_.resize( header.msg_length() + header.length() );
         }
+    
+    Message( MessageType type, const std::string& str );
 
     Message( MessageType type = MessageType::ChatMsg
            , uint16_t len = MessageSize::Empty )
@@ -164,8 +166,8 @@ public:
 
     uint16_t header_length() const
         { 
-            if( msg_type() == FileMsg )
-                return FileMsgHeaderSize;
+            if( msg_type() == FileStart )
+                return FileStartHeaderSize;
             else
                 return header_.length();
         }
@@ -182,7 +184,7 @@ public:
 
     uint32_t file_size() const
         {
-            // only valid for FileMsg
+            // only valid for FileStart
             return make_uint32( msg_body_[filesize_offset_31]
                               , msg_body_[filesize_offset_23]
                               , msg_body_[filesize_offset_15]
@@ -239,7 +241,6 @@ public:
     friend Message make_file_message( uint32_t file_size
                                     , const std::string& str );
 protected:
-    Message( MessageType type, const std::string& str );
     explicit Message( std::vector<uint8_t>&& body );
 private:
     std::vector<uint8_t>    msg_body_;

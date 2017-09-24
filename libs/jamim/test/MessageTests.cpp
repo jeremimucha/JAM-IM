@@ -272,7 +272,7 @@ TEST( make_file_message_Test, ConstructorTest ){
     ASSERT_EQ( input_msg_body.size(), input_msg.body_length() );
 
     Message test_msg = make_file_message( test_size, input_msg );
-    EXPECT_EQ( MessageType::FileMsg, test_msg.msg_type() );
+    EXPECT_EQ( MessageType::FileStart, test_msg.msg_type() );
     EXPECT_EQ( input_msg_body, test_msg.body_to_string() );
     EXPECT_EQ( test_size, test_msg.file_size() );
 }
