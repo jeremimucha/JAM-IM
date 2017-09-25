@@ -10,7 +10,10 @@ set( LIBRARY_TESTS_SOURCE
      MessageTests.cpp
 )
 
-project( ${TEST_PROJECT_NAME} )
+
+set( CMAKE_CXX_STANDARD 14 )
+
+project( ${TEST_PROJECT_NAME} LANGUAGES CXX )
 
 enable_testing()
 
@@ -20,6 +23,7 @@ target_link_libraries( ${TEST_PROJECT_NAME}
                        gtest
                        gtest_main
                        ${LIBRARY_EXT_LIBS}  # NOTE: This is defined from project above
+                       Threads::Threads
                        ${LIBRARY_NAME}      # NOTE: This is defined from project above
 )
 add_test( ${TEST_PROJECT_NAME} ${TEST_PROJECT_NAME} )

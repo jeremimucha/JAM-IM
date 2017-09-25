@@ -42,11 +42,15 @@ set( LIBRARIES
      jamim
 )
 
+
+set( CMAKE_CXX_STANDARD 14 )
+
 project( ${PROJECT_NAME} LANGUAGES CXX )
 
 # External libraries
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-find_package(Threads REQUIRED)
+set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
+set( THREADS_PREFER_PTHREAD TRUE )
+find_package( Threads REQUIRED )
 set( PROJECT_EXT_LIBS
      boost_system-mt
      boost_regex-mt
@@ -73,18 +77,24 @@ set_target_properties( ${CLIENT_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
-                    #    ${CMAKE_THREAD_LIBS_INIT}
                      )
-target_link_libraries( ${CLIENT_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
+target_link_libraries( ${CLIENT_EXECUTABLE_NAME} 
+                       ${LIBRARIES}
+                       ${PROJECT_EXT_LIBS}
+                       Threads::Threads
+                     )
 
 add_executable( ${SERVER_EXECUTABLE_NAME} ${SERVER_SOURCE} )
 set_target_properties( ${SERVER_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
-                    #    Threads::Threads
                      )
-target_link_libraries( ${SERVER_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
+target_link_libraries( ${SERVER_EXECUTABLE_NAME} 
+                       ${LIBRARIES}
+                       ${PROJECT_EXT_LIBS}
+                       Threads::Threads 
+                     )
 
 foreach( LIBRARY ${LIBRARIES} )
     add_subdirectory( "${LIBRARIES_DIR}/${LIBRARY}" )

@@ -25,10 +25,13 @@ file( GLOB LIBRARY_SOURCE
       "${LIBRARY_SOURCE_DIR}/*.cpp"
 )
 
+set( CMAKE_CXX_STANDARD 14 )
+
 project( ${PROJECT_NAME} LANGUAGES CXX )
 
 # External libraries
-set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
+set( THREADS_PREFER_PTHREAD TRUE )
 find_package(Threads REQUIRED)
 set( LIBRARY_EXT_LIBS
      boost_system-mt
@@ -61,7 +64,7 @@ target_include_directories( ${LIBRARY_NAME} PUBLIC
 
 target_link_libraries( ${LIBRARY_NAME}
                        ${LIBRARY_EXT_LIBS}
-                    #    Threads::Threads
+                       Threads::Threads
                      )
 
 # Build tests
