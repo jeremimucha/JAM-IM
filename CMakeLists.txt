@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.0.0 )
+cmake_minimum_required( VERSION 3.1.0 )
 
 set( PROJECT_NAME
      JAM-IM
@@ -42,13 +42,18 @@ set( LIBRARIES
      jamim
 )
 
+project( ${PROJECT_NAME} LANGUAGES CXX )
+
 # External libraries
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+find_package(Threads REQUIRED)
 set( PROJECT_EXT_LIBS
      boost_system-mt
      boost_regex-mt
      boost_filesystem-mt
      boost_date_time-mt
-     boost_thread-mt 
+     boost_thread-mt
+     Threads::Threads
 )
 
 if( WIN32 )
@@ -57,10 +62,6 @@ endif()
 
 # set compiler flags
 set( CXX_FLAGS "-O2 -Wall -Wextra -pedantic -std=c++14" )
-
-
-project( ${PROJECT_NAME} )
-
 
 enable_testing()
 
@@ -72,6 +73,7 @@ set_target_properties( ${CLIENT_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
+                    #    ${CMAKE_THREAD_LIBS_INIT}
                      )
 target_link_libraries( ${CLIENT_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
 
@@ -80,7 +82,8 @@ set_target_properties( ${SERVER_EXECUTABLE_NAME}
                        PROPERTIES 
                        COMPILE_FLAGS
                        ${CXX_FLAGS}
-)
+                    #    Threads::Threads
+                     )
 target_link_libraries( ${SERVER_EXECUTABLE_NAME} ${LIBRARIES} ${PROJECT_EXT_LIBS} )
 
 foreach( LIBRARY ${LIBRARIES} )
