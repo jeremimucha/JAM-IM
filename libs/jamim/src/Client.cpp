@@ -3,10 +3,8 @@
 #include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 
-#ifndef NDEBUG
-static boost::mutex debug_mutex;
-#endif /* NDEBUG */
 
+static boost::mutex debug_mutex;
 namespace fs = boost::filesystem;
 
 /* Client */
@@ -27,6 +25,13 @@ const std::unordered_map<MessageType, Client::Handler>  Client::s_handler_map_{
 /* public */
 void Client::write( const Message& msg )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     io_strand_.post(
         [this,msg]()
         {
@@ -40,10 +45,13 @@ void Client::write( const Message& msg )
 
 void Client::start_file( const Message& msg )
 {
-    /* #1 check if the file exists
-     * #2 Open the file, get file size
-     * #3 Build new file message with file size + file name
-     */
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     fs::path filepath( msg.body_to_string() );
     if( fs::is_regular_file( filepath ) ){
         #ifndef NDEBUG
@@ -76,6 +84,7 @@ void Client::close()
         std::cout << "[" << __FUNCTION__ << "]" << std::endl;
     }
     #endif /* NDEBUG */
+
     io_strand_.post( [this](){ socket_.close(); } );
 }
 
@@ -85,6 +94,13 @@ void Client::close()
 /* ------------------------------------------------------------------------- */
 void Client::do_connect( boost::asio::ip::tcp::resolver::iterator endpoint_iterator )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     boost::asio::async_connect( socket_, endpoint_iterator,
         boost::bind( &Client::handle_connect, this
                    , boost::asio::placeholders::error
@@ -94,6 +110,13 @@ void Client::do_connect( boost::asio::ip::tcp::resolver::iterator endpoint_itera
 void Client::handle_connect( const boost::system::error_code& ec
                            , boost::asio::ip::tcp::resolver::iterator /* it */ )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     if( !ec ){
         std::cout << "[Connected]" << std::endl;
         do_read_header();
@@ -102,6 +125,13 @@ void Client::handle_connect( const boost::system::error_code& ec
 
 void Client::do_file_connect( boost::asio::ip::tcp::resolver::iterator endpoint_iterator )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+    
     boost::asio::async_connect( file_socket_, endpoint_iterator
         , boost::bind( &Client::handle_file_connect, this
                      , boost::asio::placeholders::error
@@ -241,8 +271,13 @@ void Client::do_start_file()
 
 void Client::do_file_send_start()
 {
-    // signal the intent to transfer a file
-    // file_msg_ = 
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     write( make_file_message( file_size(file_queue_.front())
                             , file_queue_.front().string() ) );
     // wait for the file transfer to be accepted on the receiving end
@@ -447,7 +482,13 @@ void Client::do_file_read()
 void Client::handle_file_read( const boost::system::error_code& ec
                              , std::size_t bytes_transferred )
 {
-     
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     if( 0 < bytes_transferred ){
         read_file_.write( read_file_buf_.data(), bytes_transferred );
         if( read_file_.tellp() < read_file_size_ ){
@@ -472,6 +513,13 @@ void Client::handle_file_read( const boost::system::error_code& ec
 
 void Client::do_file_read_done()
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     boost::mutex::scoped_lock lk(debug_mutex);
     std::cout << "[Transfer complete. (bytes expected: " << (read_file_size_/8)
               << ", got: " << (read_file_.tellp() / 8 ) << "]" <<std::endl;
@@ -482,6 +530,13 @@ void Client::do_file_read_done()
 
 void Client::handle_file_read_error()
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     { boost::mutex::scoped_lock lk(debug_mutex);
         std::cout << "[File read error]" << std::endl;
     }
@@ -506,6 +561,13 @@ void Client::handle_file_done( const boost::system::error_code& ec
 void Client::handle_file_cancel( const boost::system::error_code& ec
                                 , std::size_t /*length*/ )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     if( !ec ){
         /* TODO : implement handle_file_cancel */
         std::cout << "Current file transfer cancelled." << std::endl;
@@ -519,6 +581,13 @@ void Client::handle_file_cancel( const boost::system::error_code& ec
 void Client::handle_file_cancel_all( const boost::system::error_code& ec
                                 , std::size_t /*length*/ )
 {
+    #ifndef NDEBUG
+    { boost::mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     if( !ec ){
         /* TODO : implement handle_file_cancel_all */
         std::cout << "All files cancelled." << std::endl;

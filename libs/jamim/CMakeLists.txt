@@ -32,9 +32,11 @@ set( LIBRARY_EXT_LIBS
      boost_filesystem-mt
      boost_date_time-mt
      boost_thread-mt 
-     ws2_32 
-     wsock32
 )
+
+if( WIN32 )
+    set( LIBRARY_EXT_LIBS ${LIBRARY_EXT_LIBS} ws2_32 wsock32 )
+endif( WIN32 )
 
 
 project( ${PROJECT_NAME} )

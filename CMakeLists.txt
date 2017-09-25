@@ -49,9 +49,11 @@ set( PROJECT_EXT_LIBS
      boost_filesystem-mt
      boost_date_time-mt
      boost_thread-mt 
-     ws2_32 
-     wsock32
 )
+
+if( WIN32 )
+set( PROJECT_EXT_LIBS ${PROJECT_EXT_LIBS} ws2_32 wsock32 )
+endif()
 
 # set compiler flags
 set( CXX_FLAGS "-O2 -Wall -Wextra -pedantic -std=c++14" )

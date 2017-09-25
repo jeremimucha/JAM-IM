@@ -7,29 +7,56 @@
 
 
 using boost::mutex;
-#ifndef NDEBUG
 static mutex debug_mutex;
-#endif /* NDEBUG */
+
 
 /* ChatRoom */
 /* ------------------------------------------------------------------------- */
 void ChatRoom::join( ptr_ChatParticipant participant )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    #endif /* NDEBUG */
+
     participants_.insert( participant );
 }
 
 void ChatRoom::leave( ptr_ChatParticipant participant )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", participant: "
+                  << reinterpret_cast<const void*>(participant.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     participants_.erase( participant );
 }
 
 std::size_t ChatRoom::participant_count() const
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    #endif /* NDEBUG */
+
     return participants_.size();
 }
 
 void ChatRoom::deliver( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     for( auto it = participants_.begin(); it != participants_.end(); ++it ){
         if( *it != sender ){
             (*it)->deliver( msg );
@@ -39,6 +66,12 @@ void ChatRoom::deliver( const Message& msg, ptr_ChatParticipant sender )
 
 void ChatRoom::deliver( const Message& msg )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << std::endl;
+    }
+    #endif /* NDEBUG */
+
     for( auto participant : participants_ ){
         participant->deliver( msg );
     }
@@ -46,6 +79,14 @@ void ChatRoom::deliver( const Message& msg )
 
 void ChatRoom::file_awaiting( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     response_awaiters_.insert( sender );
     file_sender_readers_map_.insert( {sender, participants_} );
     sender->file_responses_remaining( participants_.size() );
@@ -56,6 +97,14 @@ void ChatRoom::file_awaiting( const Message& msg, ptr_ChatParticipant sender )
  * responses */
 void ChatRoom::file_awaiting_complete( ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     response_awaiters_.erase( sender );
     auto it_awaiter = file_sender_readers_map_.find( sender );
     if( it_awaiter != file_sender_readers_map_.end() ){
@@ -67,6 +116,14 @@ void ChatRoom::file_awaiting_complete( ptr_ChatParticipant sender )
 
 std::size_t ChatRoom::file_reader_count( ptr_ChatParticipant sender ) const
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     auto it_awaiter = file_sender_readers_map_.find( sender );
     if( it_awaiter != file_sender_readers_map_.end() ){
         return it_awaiter->second.size();
@@ -79,6 +136,14 @@ std::size_t ChatRoom::file_reader_count( ptr_ChatParticipant sender ) const
 /* Sent by a ChatParticipant (sender) accepting a file transfer */
 void ChatRoom::file_accept( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     for( ptr_ChatParticipant p : response_awaiters_ ){
         auto it_awaiter = file_sender_readers_map_.find( p );
         if( it_awaiter != file_sender_readers_map_.end() ){
@@ -90,6 +155,14 @@ void ChatRoom::file_accept( const Message& msg, ptr_ChatParticipant sender )
 /* Sent by a ChatParticipant (sender) refusing a file transfer */
 void ChatRoom::file_refuse( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     for( ptr_ChatParticipant p : response_awaiters_ ){
         auto it_awaiter = file_sender_readers_map_.find( p );
         if( it_awaiter != file_sender_readers_map_.end() ){
@@ -101,12 +174,28 @@ void ChatRoom::file_refuse( const Message& msg, ptr_ChatParticipant sender )
 
 void ChatRoom::file_cancel( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     file_msg_deliver( msg, sender );
     file_sender_readers_map_.erase( sender );
 }
 
 void ChatRoom::file_cancel_all( const Message& msg, ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     file_msg_deliver( msg, sender );
     file_sender_readers_map_.erase( sender );
 }
@@ -121,6 +210,14 @@ void ChatRoom::file_done( const Message& msg, ptr_ChatParticipant sender )
 void ChatRoom::file_deliver( const std::vector<char>& data
                            , ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     auto it = file_sender_readers_map_.find( sender );
     if( it != file_sender_readers_map_.end() ){
         for( ptr_ChatParticipant reader : it->second ){
@@ -132,6 +229,14 @@ void ChatRoom::file_deliver( const std::vector<char>& data
 void ChatRoom::file_msg_deliver( const Message& msg
                                , ptr_ChatParticipant sender )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__ << ", sender: "
+                  << reinterpret_cast<const void*>(sender.get())
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     auto it = file_sender_readers_map_.find( sender );
     if( it != file_sender_readers_map_.end() ){
         for( ptr_ChatParticipant reader : it->second ){
@@ -164,12 +269,26 @@ ChatSession::s_handler_map_{
 
 void ChatSession::start()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     room_.join( shared_from_this() );
     do_read_header();
 }
 
 void ChatSession::deliver( const Message& msg )
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     io_strand_.post(
         [this,msg]()
         {
@@ -186,6 +305,13 @@ void ChatSession::deliver( const Message& msg )
 
 void ChatSession::do_read_header()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     boost::asio::async_read( socket_
         , boost::asio::buffer( read_msg_.data(), MessageHeader::HeaderLength )
         , io_strand_.wrap(
@@ -217,6 +343,13 @@ void ChatSession::handle_read_header( const boost::system::error_code& ec
 
 void ChatSession::do_read_body()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+    
     auto it = s_handler_map_.find( read_msg_.msg_type() );
     Handler handler = ( (it!=s_handler_map_.end()) ? it->second 
                                                    : &ChatSession::handle_unknown );
@@ -437,6 +570,13 @@ void ChatSession::handle_file_done( const boost::system::error_code& ec
 /* file sending */
 void ChatSession::do_file_send_start()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     // signal the file transfer requestor to start the transfer
     // start reading data from the file_socket_ -> handle_file_send()
     file_msg_ = Message( MessageType::FileAccept, MessageSize::Empty );
@@ -465,6 +605,13 @@ void ChatSession::handle_file_send_start( const boost::system::error_code& ec
 /* Keep reading file chunks as long as they're available */
 void ChatSession::do_file_send()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     boost::asio::async_read( file_socket_
         , boost::asio::buffer( file_send_buf_.data(), file_send_buf_.size() )
         , io_file_strand_.wrap(
@@ -481,22 +628,6 @@ void ChatSession::handle_file_send( const boost::system::error_code& ec
                                     , std::size_t bytes_transferred )
 {
     if( !ec ){
-        // push into the send data buffer
-        // do_file_deliver( std::vector<char>( file_send_buf_.begin()
-        //                                   , file_send_buf_.begin()
-        //                                     + bytes_transferred ) );
-        // io_file_strand_.post(
-        //     [this, bytes_transferred]()
-        //     {
-        //         bool write_in_progress = !file_send_queue_.empty();
-        //         file_send_queue_.emplace_back( file_send_buf_.begin()
-        //                                        , file_send_buf_
-        //                                         + bytes_transferred);
-        //         if( !write_in_progress ){
-        //             do_file_write();
-        //         }
-        //     }
-        // )
         room_.file_deliver( std::vector<char>( file_send_buf_.begin()
                                              , (file_send_buf_.begin() 
                                                + bytes_transferred) )
@@ -711,9 +842,7 @@ void ChatSession::handle_file_error( const boost::system::error_code& ec )
     room_.deliver( Message( MessageType::ChatMsg
                           , "[File Transfer Error]" ) );
     file_read_queue_.clear();
-    // file_send_buf_.clear();
     file_responses_remaining_ = 0;
-    // io_file_service_.stop();
 }
 
 /* ------------------------------------------------------------------------- */
@@ -761,6 +890,13 @@ void Server::handle_accept( const boost::system::error_code& ec )
 
 void Server::do_file_accept()
 {
+    #ifndef NDEBUG
+    { mutex::scoped_lock lk(debug_mutex);
+        std::cout << __PRETTY_FUNCTION__
+                  << std::endl;
+    }
+    #endif /* NDEBUG */
+
     file_acceptor_.async_accept( file_socket_
         , boost::bind( &Server::handle_file_accept, this
                      , boost::asio::placeholders::error ) );
