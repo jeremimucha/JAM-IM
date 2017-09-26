@@ -81,7 +81,7 @@ set_target_properties( ${CLIENT_EXECUTABLE_NAME}
 target_link_libraries( ${CLIENT_EXECUTABLE_NAME} 
                        ${LIBRARIES}
                        ${PROJECT_EXT_LIBS}
-                       Threads::Threads
+                      #  Threads::Threads
                      )
 
 add_executable( ${SERVER_EXECUTABLE_NAME} ${SERVER_SOURCE} )
@@ -93,7 +93,7 @@ set_target_properties( ${SERVER_EXECUTABLE_NAME}
 target_link_libraries( ${SERVER_EXECUTABLE_NAME} 
                        ${LIBRARIES}
                        ${PROJECT_EXT_LIBS}
-                       Threads::Threads 
+                      #  Threads::Threads 
                      )
 
 foreach( LIBRARY ${LIBRARIES} )

@@ -64,7 +64,7 @@ target_include_directories( ${LIBRARY_NAME} PUBLIC
 
 target_link_libraries( ${LIBRARY_NAME}
                        ${LIBRARY_EXT_LIBS}
-                       Threads::Threads
+                    #    Threads::Threads
                      )
 
 # Build tests

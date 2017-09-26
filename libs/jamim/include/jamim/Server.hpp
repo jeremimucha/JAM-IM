@@ -58,7 +58,7 @@ public:
     ChatRoom( boost::asio::io_service& io_service
             , boost::asio::io_service& io_file_service )
         : io_strand_( io_service )
-        , io_file_strand_( io_file_service )
+        , io_file_strand_( io_service )
         { }
 
     void join( ptr_ChatParticipant participant );
@@ -112,7 +112,7 @@ public:
         , socket_( std::move(socket) )
         , file_socket_( std::move(file_socket) )
         , io_strand_( io_service )
-        , io_file_strand_( io_file_service )
+        , io_file_strand_( io_service )
         , room_( room )
         { }
 
@@ -234,8 +234,12 @@ public:
 
     void run()
         { 
-            thread_group.create_thread( [this](){ io_service_.run(); } );
-            thread_group.create_thread( [this](){ io_file_service_.run(); } );
+            // thread_group.create_thread( [this](){ io_service_.run(); } );
+            // thread_group.create_thread( [this](){ io_file_service_.run(); } );
+            thread_group.create_thread( 
+                boost::bind( &boost::asio::io_service::run, &io_service_ ) );
+            thread_group.create_thread(
+                boost::bind( &boost::asio::io_service::run, &io_service_ ) );
         }
 
     ~Server()

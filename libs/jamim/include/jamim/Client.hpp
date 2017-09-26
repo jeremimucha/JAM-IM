@@ -30,9 +30,9 @@ public:
         : io_service_( io_service )
         , io_file_service_( io_file_service )
         , io_strand_( io_service )
-        , io_file_strand_( io_file_service_ )
+        , io_file_strand_( io_service )
         , socket_( io_service )
-        , file_socket_( io_file_service_ )
+        , file_socket_( io_service )
         {
             do_connect( endpoint_iterator );
             do_file_connect( file_endpoint_iterator );

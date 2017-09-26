@@ -23,7 +23,7 @@ target_link_libraries( ${TEST_PROJECT_NAME}
                        gtest
                        gtest_main
                        ${LIBRARY_EXT_LIBS}  # NOTE: This is defined from project above
-                       Threads::Threads
+                    #    Threads::Threads
                        ${LIBRARY_NAME}      # NOTE: This is defined from project above
 )
 add_test( ${TEST_PROJECT_NAME} ${TEST_PROJECT_NAME} )

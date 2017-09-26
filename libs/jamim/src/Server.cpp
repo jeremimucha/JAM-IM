@@ -685,7 +685,7 @@ void ChatSession::handle_file_send( const boost::system::error_code& ec
     // }
     // #endif /* NDEBUG */
 
-    // io_file_strand_.post(
+    // io_strand_.post(
     //     [this,data]()
     //     {
     //         bool write_in_progress = !file_send_queue_.empty();
@@ -911,7 +911,7 @@ void Server::handle_file_accept( const boost::system::error_code& ec )
     if( !ec ){
         
         std::make_shared<ChatSession>( io_service_
-                                     , io_file_service_
+                                     , io_service_
                                      , std::move( socket_ )
                                      , std::move( file_socket_ )
                                      , room_, 1 )->start();
